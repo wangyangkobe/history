@@ -8,9 +8,34 @@ class ThreeJi(Statistics):
     def __init__(self, dbName1, dbName2, rootDir = None):
         Statistics.__init__(self, dbName1, dbName2, rootDir)
         self.total = self.table1.find({'ji': {'$ne': ""}}).count()
-        self.rootDir = os.path.join(self.rootDir, u"ͬ连续3季")
-        self.logger = logging.getLogger('ThreeJi')
         
+        self.rootDir = os.path.join(self.rootDir, u"步骤三数据库数据的匹配程度")
+        if not os.path.exists(self.rootDir):
+            os.mkdir(self.rootDir)
+        
+        self.rootDir = os.path.join(self.rootDir, u"2.不考虑公历年")    
+        if not os.path.exists(self.rootDir):
+            os.mkdir(self.rootDir)
+        
+        self.rootDir = os.path.join(self.rootDir, u"2.考虑季节")    
+        if not os.path.exists(self.rootDir):
+            os.mkdir(self.rootDir)
+        
+        self.rootDir = os.path.join(self.rootDir, u"ͬ4.连续3季")
+        if not os.path.exists(self.rootDir):
+            os.mkdir(self.rootDir)  
+            
+        self.logger = logging.getLogger('ThreeJi')
+    
+    def jiScope(self, ji):
+        if ji == "1":
+            return [3, 4, 1, 2, 3]
+        elif ji == "2":
+            return [4, 1, 2, 3, 4]
+        elif ji == "3":
+            return [1, 2, 3, 4, 1]
+        else:
+            return [2, 3, 4, 1, 2]    
     def step1(self):
         resultDir = self.createDir(str(1))
         (match, no_match) = self.createResultFile(resultDir)
@@ -19,9 +44,9 @@ class ThreeJi(Statistics):
         failed  = 0    
         for element in self.table1.find({'ji': {'$ne': ""}}):
             ji = element['ji']
-            if self.table2.find_one({'guanZhi' : element['guanZhi'],
-                                     'ji'      : {'$in' : [ji, "", str(int(ji)-1), str(int(ji)+1), str(int(ji)-2), str(int(ji)+2)]},
-                                     'name'    : element['name']}):
+            res = self.table2.find_one({'guanZhi' : element['guanZhi'],
+                                        'name'    : element['name']})
+            if res and (len(ji) > 0) and (Statistics.convertJi(self, res['ji']) in self.jiScope(ji)):
                 match.write(self.formatElement(element))
                 success += 1
             else:
@@ -39,10 +64,10 @@ class ThreeJi(Statistics):
         failed  = 0    
         for element in self.table1.find({'ji': {'$ne': ""}}):
             ji = element['ji']
-            if self.table2.find_one({'guanZhi' : element['guanZhi'],
-                                     'name'    : element['name'],
-                                     'ji'      : {'$in' : [ji, "", str(int(ji)-1), str(int(ji)+1), str(int(ji)-2), str(int(ji)+2)]},
-                                     'minZu'   : element['minZu']}):
+            res = self.table2.find_one({'guanZhi' : element['guanZhi'],
+                                        'name'    : element['name'],
+                                        'minZu'   : element['minZu']})
+            if res and (len(ji) > 0) and (Statistics.convertJi(self, res['ji']) in self.jiScope(ji)):
                 match.write(self.formatElement(element))
                 success += 1
             else:
@@ -51,6 +76,7 @@ class ThreeJi(Statistics):
         result = (success, success/self.total, failed, failed/self.total)    
         self.logResult(2, result) 
         return result
+    
     def step3(self):
         resultDir = self.createDir(str(3))
         (match, no_match) = self.createResultFile(resultDir)
@@ -59,13 +85,11 @@ class ThreeJi(Statistics):
         failed  = 0    
         for element in self.table1.find({'ji': {'$ne': ""}}):
             ji = element['ji']
-            result = self.table2.find_one({'guanZhi' : element['guanZhi'], 
-                                           'name'    : element['name'],
-                                           'ji'      : {'$in' : [ji, "", str(int(ji)-1), str(int(ji)+1), str(int(ji)-2), str(int(ji)+2)]},
-                                           'minZu'   : element['minZu']})
+            res = self.table2.find_one({'guanZhi' : element['guanZhi'], 
+                                        'name'    : element['name'],
+                                        'minZu'   : element['minZu']})
         
-            if result and (element['qiFen'] == result['qiFen'] or 
-                           element['qiFen'] == result['qiFenHuo']):
+            if res and (len(ji) > 0) and (Statistics.convertJi(self, res['ji']) in self.jiScope(ji)) and (element['qiFen'] == res['qiFen'] or element['qiFen'] == res['qiFenHuo']):
                 match.write(self.formatElement(element))
                 success += 1
             else:
@@ -83,14 +107,12 @@ class ThreeJi(Statistics):
         failed  = 0    
         for element in self.table1.find({'ji': {'$ne': ""}}):
             ji = element['ji']
-            result = self.table2.find_one({'guanZhi' : element['guanZhi'], 
-                                           'name'    : element['name'],
-                                           'ji'      : {'$in' : [ji, "", str(int(ji)-1), str(int(ji)+1), str(int(ji)-2), str(int(ji)+2)]},
-                                           'keJu'    : element['keJu'],
-                                           'minZu'   : element['minZu']})
+            res = self.table2.find_one({'guanZhi' : element['guanZhi'], 
+                                        'name'    : element['name'],
+                                        'keJu'    : element['keJu'],
+                                        'minZu'   : element['minZu']})
         
-            if result and (element['qiFen'] == result['qiFen'] or 
-                           element['qiFen'] == result['qiFenHuo']):
+            if res and (len(ji) > 0) and (Statistics.convertJi(self, res['ji']) in self.jiScope(ji)) and (element['qiFen'] == res['qiFen'] or element['qiFen'] == res['qiFenHuo']):
                 match.write(self.formatElement(element))
                 success += 1
             else:
@@ -108,12 +130,11 @@ class ThreeJi(Statistics):
         failed  = 0    
         for element in self.table1.find({'ji': {'$ne': ""}}):
             ji = element['ji']
-            result = self.table2.find_one({'guanZhi' : element['guanZhi'], 
-                                           'name'    : element['name'],
-                                           'ji'      : {'$in' : [ji, "", str(int(ji)-1), str(int(ji)+1), str(int(ji)-2), str(int(ji)+2)]},
-                                           'keJu'    : element['keJu']})
+            res = self.table2.find_one({'guanZhi' : element['guanZhi'], 
+                                        'name'    : element['name'],
+                                        'keJu'    : element['keJu']})
         
-            if result:
+            if res and (len(ji) > 0) and (Statistics.convertJi(self, res['ji']) in self.jiScope(ji)):
                 match.write(self.formatElement(element))
                 success += 1
             else:
@@ -130,9 +151,10 @@ class ThreeJi(Statistics):
         res4 = self.step4()
         res5 = self.step5()
         resultFile = open(os.path.join(self.rootDir, 'result.txt'), "w")
-        index = 1
+        index = 0
+        titles = [ u"1:官职+姓名", u"2:官职+姓名+民族", u"3:官职+姓名+民族+旗分", u"4:官职+姓名+民族+旗分+科举", u"5:官职+姓名+科举"]
         for (a, b, c, d) in [res1, res2, res3, res4, res5]:
-            resultFile.write("step{}: {} {} {} {}\n".format(index, a, b, c, d))
+            resultFile.write("step{}: {} {} {} {}\n".format(titles[index], a, b, c, d))
             index += 1
 
 if __name__ == '__main__':

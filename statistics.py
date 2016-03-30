@@ -4,15 +4,12 @@ import logging
 import pymongo
 import os
 import sys
+import lib
 
 reload(sys)
 sys.setdefaultencoding("utf-8")
 
 class Statistics:
-    headers  = r"季节;朝代;年;公历年;季;衙门;官职;官职简写;官员;品级;身份;名;民族;旗分;爵位;科举"
-    keys     = ['jiJie', 'chaoDai', 'nian', 'gongLiNian', 'ji', 'yaMen', 'guanZhi', 'guanZhiJianXie', 'guanYuan', 'pinJi', 'shengFen', 'ming', 'minZu', 'qiFen', 'jueWei', 'keJu']
-    headers2 = r"朝代;年;月;公历年;季;衙门;官职;官职简写;官员;品级;身份;名;又名;民族;旗分;旗分（或）;爵位;科举;科举（其他）"
-    keys2    = ['chaoDai', 'nian', 'yue', 'gongLiNian', 'ji', 'yaMen', 'guanZhi', 'guanZhiJianXie', 'guanYuan', 'pinJi', 'shengFen', 'ming', 'youMing', 'minZu', 'qiFen', 'qiFenHuo', 'jueWei', 'keJu', 'keJuHuo']
     dbClient = pymongo.MongoClient()
     logging.basicConfig(level=logging.INFO)
     def __init__(self, dbName1, dbName2, rootDir):
@@ -24,6 +21,16 @@ class Statistics:
         self.table2 = Statistics.dbClient.history[dbName2]
         self.logger = logging.getLogger('Statistics')
     
+    def convertJi(self, month):
+        if month in ["1", "2", "3"]:
+            return 1
+        elif month in ["4", "5", "6"]:
+            return 2
+        elif month in ["7", "8", "9"]:
+            return 3
+        else:
+            return 4
+        
     def createDir(self, dirName):
         if not os.path.exists(self.rootDir):
             os.mkdir(self.rootDir)
@@ -37,22 +44,31 @@ class Statistics:
         matched    = open(os.path.join(dirName, 'match.txt'),    "w")
         notMatched = open(os.path.join(dirName, 'no_match.txt'), "w")
     
-        matched.write(Statistics.headers + '\n')
-        notMatched.write(Statistics.headers + '\n')
+        matched.write(lib.headers1 + '\n')
+        notMatched.write(lib.headers1 + '\n')
     
         return (matched, notMatched)
+    
     def formatElement(self, element):
         res = []
-        for key in Statistics.keys:
+        for key in lib.keys1:
             res.append(element[key])  
         return ';'.join(res) + '\n'
     
     def formatElement2(self, element):
         res = []
-        for key in Statistics.keys2:
+        for key in lib.keys2:
+            res.append(element[key])  
+        return ';'.join(res) + '\n'
+    
+    def formatElement3(self, element):
+        res = []
+        for key in lib.keys3:
             res.append(element[key])  
         return ';'.join(res) + '\n'
     
     def logResult(self, step, result):
+        titles = [u"", u"1:官职+姓名", u"2:官职+姓名+民族", u"3:官职+姓名+民族+旗分", u"4官职+姓名+民族+旗分+科举", u"5官职+姓名+科举"]
         self.logger.info("step{} --- success: {} ration: {} failed: {} ratio: {}"
-                         .format(step, result[0], result[1], result[2], result[3]))
+                         .format(titles[step], result[0], result[1], result[2], result[3]))
+

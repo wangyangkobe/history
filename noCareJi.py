@@ -2,20 +2,28 @@
 from __future__ import division
 from statistics import Statistics 
 import logging
-import pymongo
 import os
-import sys
-
 
 class OneJi(Statistics):
     def __init__(self, dbName1, dbName2, rootDir = None):
         Statistics.__init__(self, dbName1, dbName2, rootDir)
         self.total = self.table1.count()
-        self.rootDir = os.path.join(self.rootDir, u"ͬ不考虑季")
-        self.logger = logging.getLogger('NoCareJi')
+        self.rootDir = os.path.join(self.rootDir, u"步骤三数据库数据的匹配程度")
+        if not os.path.exists(self.rootDir):
+            os.mkdir(self.rootDir)
         
+        self.rootDir = os.path.join(self.rootDir, u"2.不考虑公历年")    
+        if not os.path.exists(self.rootDir):
+            os.mkdir(self.rootDir)
+        
+        self.rootDir = os.path.join(self.rootDir, u"1.不考虑季节")    
+        if not os.path.exists(self.rootDir):
+            os.mkdir(self.rootDir)
+                
+        self.logger = logging.getLogger(u'不考虑季')
+         
     def step1(self):
-        resultDir = self.createDir(str(1))
+        resultDir = self.createDir("1")
         (match, no_match) = self.createResultFile(resultDir)
     
         success = 0
@@ -33,7 +41,7 @@ class OneJi(Statistics):
         return result
     
     def step2(self):
-        resultDir = self.createDir(str(2))
+        resultDir = self.createDir("2")
         (match, no_match) = self.createResultFile(resultDir)
     
         success = 0
@@ -50,8 +58,9 @@ class OneJi(Statistics):
         result = (success, success/self.total, failed, failed/self.total)    
         self.logResult(2, result) 
         return result
+    
     def step3(self):
-        resultDir = self.createDir(str(3))
+        resultDir = self.createDir("3")
         (match, no_match) = self.createResultFile(resultDir)
     
         success = 0
@@ -73,7 +82,7 @@ class OneJi(Statistics):
         return result
 
     def step4(self):
-        resultDir = self.createDir(str(4))
+        resultDir = self.createDir("4")
         (match, no_match) = self.createResultFile(resultDir)
     
         success = 0
@@ -96,7 +105,7 @@ class OneJi(Statistics):
         return result
     
     def step5(self):
-        resultDir = self.createDir(str(5))
+        resultDir = self.createDir("5")
         (match, no_match) = self.createResultFile(resultDir)
     
         success = 0
@@ -123,9 +132,10 @@ class OneJi(Statistics):
         res4 = self.step4()
         res5 = self.step5()
         resultFile = open(os.path.join(self.rootDir, 'result.txt'), "w")
-        index = 1
+        index = 0
+        titles = [ u"1:官职+姓名", u"2:官职+姓名+民族", u"3:官职+姓名+民族+旗分", u"4:官职+姓名+民族+旗分+科举", u"5:官职+姓名+科举"]
         for (a, b, c, d) in [res1, res2, res3, res4, res5]:
-            resultFile.write("step{}: {} {} {} {}\n".format(index, a, b, c, d))
+            resultFile.write("step{}: {} {} {} {}\n".format(titles[index], a, b, c, d))
             index += 1
 
 if __name__ == '__main__':
