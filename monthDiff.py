@@ -20,7 +20,13 @@ def scope(ji):
     else:
         return (10,12)
 
-def compare(db1Line, db2Line):
+def compare(db1Lines, db2Line):
+    tmp = []
+    for line in db1Lines:
+        tmp.append( (line, int(line['ji'])) )
+    tmp.sort(key=lambda ele: ele[1])
+    db1Line = tmp[0][0]
+    
     (left, right) = scope(db1Line['ji'])
     month = int(db2Line['ji'])
     if month < left:
@@ -43,9 +49,9 @@ def worker(rootDir, month):
 
     total = 0
     for r2 in db2.find({'ji': {'$ne': ""}}):
-        r1 = db1.find_one({"name":r2["name"], "guanZhi":r2['guanZhi'], "gongLiNian":r2['gongLiNian']})
-        #r1 = db1.find_one({"name":r2["name"], "guanZhi":r2['guanZhi']})
-        if r1:
+        #r1 = db1.find({"name":r2["name"], "guanZhi":r2['guanZhi'], "gongLiNian":r2['gongLiNian']})
+        r1 = db1.find({"name":r2["name"], "guanZhi":r2['guanZhi']})
+        if r1.count() > 0:
             total += 1
             if compare(r1, r2) == month:
                 matched.append(r2)

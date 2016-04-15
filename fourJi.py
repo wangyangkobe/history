@@ -7,7 +7,8 @@ import os
 class FourJi(Statistics):
     def __init__(self, dbName1, dbName2, rootDir = None):
         Statistics.__init__(self, dbName1, dbName2, rootDir)
-        self.total = self.table1.find({'ji': {'$ne': ""}}).count()
+        #self.total = self.table1.find({'ji': {'$ne': ""}}).count()
+        self.total = Statistics.numberOfGongLiNianEqual(self)
         self.rootDir = os.path.join(self.rootDir, u"步骤三数据库数据的匹配程度")
         if not os.path.exists(self.rootDir):
             os.mkdir(self.rootDir)
@@ -44,7 +45,10 @@ class FourJi(Statistics):
         failed  = 0    
         for element in self.table1.find({'ji': {'$ne': ""}}):
             ji = element['ji']
+            gongLiNian = int(element['gongLiNian'])
+            gongLiNianScope = [str(gongLiNian-1), str(gongLiNian), str(gongLiNian+1)]
             res = self.table2.find_one({'guanZhi' : element['guanZhi'],
+                                        'gongLiNian' : {'$in': gongLiNianScope},
                                         'name'    : element['name']})
             if res and (len(ji) > 0) and (Statistics.convertJi(self, res['ji']) in self.jiScope(ji)):
                 match.write(self.formatElement(element))
@@ -52,6 +56,7 @@ class FourJi(Statistics):
             else:
                 no_match.write(self.formatElement(element))
                 failed += 1
+        failed = self.total - success
         result = (success, success/self.total, failed, failed/self.total)    
         self.logResult(1, result) 
         return result
@@ -64,7 +69,10 @@ class FourJi(Statistics):
         failed  = 0    
         for element in self.table1.find({'ji': {'$ne': ""}}):
             ji = element['ji']
+            gongLiNian = int(element['gongLiNian'])
+            gongLiNianScope = [str(gongLiNian-1), str(gongLiNian), str(gongLiNian+1)]
             res = self.table2.find_one({'guanZhi' : element['guanZhi'],
+                                        'gongLiNian' : {'$in': gongLiNianScope},
                                         'name'    : element['name'],
                                         'minZu'   : element['minZu']})
             if res and (len(ji) > 0) and (Statistics.convertJi(self, res['ji']) in self.jiScope(ji)):
@@ -73,6 +81,7 @@ class FourJi(Statistics):
             else:
                 no_match.write(self.formatElement(element))
                 failed += 1
+        failed = self.total - success
         result = (success, success/self.total, failed, failed/self.total)    
         self.logResult(2, result) 
         return result
@@ -84,7 +93,10 @@ class FourJi(Statistics):
         failed  = 0    
         for element in self.table1.find({'ji': {'$ne': ""}}):
             ji = element['ji']
-            res = self.table2.find_one({'guanZhi' : element['guanZhi'], 
+            gongLiNian = int(element['gongLiNian'])
+            gongLiNianScope = [str(gongLiNian-1), str(gongLiNian), str(gongLiNian+1)]
+            res = self.table2.find_one({'guanZhi' : element['guanZhi'],
+                                       'gongLiNian' : {'$in': gongLiNianScope},
                                         'name'    : element['name'],
                                         'minZu'   : element['minZu']})
         
@@ -94,6 +106,7 @@ class FourJi(Statistics):
             else:
                 no_match.write(self.formatElement(element))
                 failed += 1
+        failed = self.total - success
         result = (success, success/self.total, failed, failed/self.total)    
         self.logResult(3, result) 
         return result
@@ -106,7 +119,10 @@ class FourJi(Statistics):
         failed  = 0    
         for element in self.table1.find({'ji': {'$ne': ""}}):
             ji = element['ji']
+            gongLiNian = int(element['gongLiNian'])
+            gongLiNianScope = [str(gongLiNian-1), str(gongLiNian), str(gongLiNian+1)]
             res = self.table2.find_one({'guanZhi' : element['guanZhi'], 
+                                        'gongLiNian' : {'$in': gongLiNianScope},
                                         'name'    : element['name'],
                                         'keJu'    : element['keJu'],
                                         'minZu'   : element['minZu']})
@@ -116,6 +132,7 @@ class FourJi(Statistics):
             else:
                 no_match.write(self.formatElement(element))
                 failed += 1
+        failed = self.total - success
         result = (success, success/self.total, failed, failed/self.total)    
         self.logResult(4, result) 
         return result
@@ -128,7 +145,10 @@ class FourJi(Statistics):
         failed  = 0    
         for element in self.table1.find({'ji': {'$ne': ""}}):
             ji = element['ji']
+            gongLiNian = int(element['gongLiNian'])
+            gongLiNianScope = [str(gongLiNian-1), str(gongLiNian), str(gongLiNian+1)]
             res = self.table2.find_one({'guanZhi' : element['guanZhi'], 
+                                        'gongLiNian' : {'$in': gongLiNianScope},
                                         'name'    : element['name'],
                                         'keJu'    : element['keJu']})
             if res and (len(ji) > 0) and (Statistics.convertJi(self, res['ji']) in self.jiScope(ji)):
@@ -137,6 +157,7 @@ class FourJi(Statistics):
             else:
                 no_match.write(self.formatElement(element))
                 failed += 1
+        failed = self.total - success
         result = (success, success/self.total, failed, failed/self.total)    
         self.logResult(5, result) 
         return result

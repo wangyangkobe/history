@@ -42,6 +42,7 @@ class JiEqualNull(Statistics):
                 no_match.write(self.formatElement2(element))
         resultFile = open(os.path.join(self.rootDir, 'result.txt'), "w")
         resultFile.write("数据库2季为空的数据有: {}, 共  {}, 比例为: {}".format(i, i+j, i/(i+j)))
+        self.logger.info('step0 done!')
         
     def step1(self):
         resultDir = self.createDir(str(1))

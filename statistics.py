@@ -71,4 +71,30 @@ class Statistics:
         titles = [u"", u"1:官职+姓名", u"2:官职+姓名+民族", u"3:官职+姓名+民族+旗分", u"4官职+姓名+民族+旗分+科举", u"5官职+姓名+科举"]
         self.logger.info("step{} --- success: {} ration: {} failed: {} ratio: {}"
                          .format(titles[step], result[0], result[1], result[2], result[3]))
+    
+    def numberOfGongLiNianEqual(self):
+        years = []
+        set2 = set()
+        set3 = set()
+        
+        for element in self.table2.find():
+            if len(element['ji']) > 0:
+                set2.add(element['gongLiNian'])
+            else:
+                set3.add(element['gongLiNian'])
+    
+        i = 0
+        j = 0
+        k = 0         
+        for element in self.table1.find():
+            if element['gongLiNian'] in set2:
+                i += 1
+                years.append(element['gongLiNian'])
+            else:
+                j += 1
+                
+            if element['gongLiNian'] in set3:
+                k += 1
+        print i, j, k    
+        return len(years)
 
