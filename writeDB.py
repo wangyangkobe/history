@@ -10,20 +10,22 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-dataBase1 = r"C:\Users\elqstux\Desktop\study\History\database1.csv"
-dataBase2 = r"C:\Users\elqstux\Desktop\study\History\database2.csv"
-dataBase3 = r"C:\Users\elqstux\Desktop\study\History\database3.csv"
+dataBase1   = r"C:\Users\elqstux\Desktop\study\History\database1.csv"
+dataBase1_1 = r"C:\Users\elqstux\Desktop\study\History\database1_1.csv"
+dataBase2   = r"C:\Users\elqstux\Desktop\study\History\database2.csv"
+dataBase3   = r"C:\Users\elqstux\Desktop\study\History\database3.csv"
 
 dbClient = pymongo.MongoClient()
-db = dbClient.history
-table1 = db.table1
-table2 = db.table2
-table3 = db.table3
+db       = dbClient.history
+table1   = db.table1
+table2   = db.table2
+table3   = db.table3
+table1_1 = db.table1_1
 
 field1 = ['jiJie', 'chaoDai', 'nian', 'gongLiNian', 'ji', 'yaMen', 'guanZhi', 'guanZhiJianXie', 'guanYuan', 'pinJi', 'shengFen', 'ming', 'yuanXingMing', 'minZu', 'qiFen', 'jueWei', 'keJu', 'name']
 field2 = ['chaoDai', 'nian', 'yue', 'gongLiNian', 'ji', 'yaMen', 'guanZhi', 'guanZhiJianXie', 'guanYuan', 'pinJi', 'shengFen', 'ming', 'youMing', 'minZu', 'qiFen', 'qiFenHuo', 'jueWei', 'keJu', 'keJuHuo', 'name']
-field3 = ['keNianGongLi', 'xingMing', 'qiFen', 'minZu', 'name']
-
+#field3 = ['keNianGongLi', 'xingMing', 'qiFen', 'minZu', 'name']
+field3 = ['keNianNianHao', 'keNianShiJian', 'keNianGongLi', 'keNianGanZhi', 'ke', 'mingCi', 'keMing', 'jiaDi', 'xingMing', 'yuanMing', 'sheng', 'fu', 'xianHuoZhou', 'qiFen', 'minZu', 'minZuTeDian', 'xianFuShenFen', 'zhuFangDi', 'shuoNing', 'ji1', 'ji2', 'zhengZhiShenFen', 'name']
 def writeDB3(cvsPath):
     table3.remove()
     i = 0
@@ -33,13 +35,13 @@ def writeDB3(cvsPath):
             continue
         values = line.replace('\n', '').split(';')
         
-        keNianGongLi = values[2]
-        xingMing     = values[8]
-        qiFen        = values[12]
-        minZu        = values[13]
+        #keNianGongLi = values[2]
+        #xingMing     = values[8]
+        #qiFen        = values[13]
+        #minZu        = values[14]
         name         = '_'.join(lazy_pinyin(values[8].decode('utf-8')))
-        
-        element = zip(field3, [keNianGongLi, xingMing, qiFen, minZu, name])
+        values.append(name)
+        element = zip(field3, values)
         table3.insert(dict(element))
         i += 1
     logging.info(r"write db %s finished, lines = %d" % (cvsPath, i))
@@ -70,6 +72,9 @@ if __name__ == '__main__':
     
     res2 = writeCvsToDB(dataBase2, table2, field2)
     lib.writeDataForTable2(open(os.path.join(dirPath, u"数据库2.txt"), "w"), res2)
+    
+    
+    res1_1 = writeCvsToDB(dataBase1_1, table1_1, field1)
     
     with open(os.path.join(dirPath, 'result.txt'), 'w') as file_:
         file_.write("数据库1: 重名人数: {}  总人数: {} 比例: {}\n".format(len(res1), lib.table1.count(), len(res1)/lib.table1.count()))

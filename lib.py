@@ -5,8 +5,8 @@ keys1     = ['jiJie', 'chaoDai', 'nian', 'gongLiNian', 'ji', 'yaMen', 'guanZhi',
 headers2  = r"朝代;年;月;公历年;季;衙门;官职;官职简写;官员;品级;身份;名;又名;民族;旗分;旗分（或）;爵位;科举;科举（其他）"
 keys2     = ['chaoDai', 'nian', 'yue', 'gongLiNian', 'ji', 'yaMen', 'guanZhi', 'guanZhiJianXie', 'guanYuan', 'pinJi', 'shengFen', 'ming', 'youMing', 'minZu', 'qiFen', 'qiFenHuo', 'jueWei', 'keJu', 'keJuHuo']
 
-headers3 = r"姓名;科年公歷;旗分;民族"
-keys3    = ['xingMing', 'keNianGongLi', 'qiFen', 'minZu']
+headers3 = r"科年年号;科年时间;科年公历;科年干支;科;名次;科名;甲第;姓名;数据库3原名;省;府;县或州;旗分;民族;民族特点;先赋身份;旗人驻防地;说明;籍1;籍2;政治身份"
+keys3    = ['keNianNianHao', 'keNianShiJian', 'keNianGongLi', 'keNianGanZhi', 'ke', 'mingCi', 'keMing', 'jiaDi', 'xingMing', 'yuanMing', 'sheng', 'fu', 'xianHuoZhou', 'qiFen', 'minZu', 'minZuTeDian', 'xianFuShenFen', 'zhuFangDi', 'shuoNing', 'ji1', 'ji2', 'zhengZhiShenFen']
 
 dbClient = pymongo.MongoClient()
 db = dbClient.history
