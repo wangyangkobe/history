@@ -67,6 +67,9 @@ def step1():
 		writer.save()
 		
 def step2():
+	logger.info("running step2!")
+	writer = pd.ExcelWriter(os.path.join(baseDir, '2.官职姓名重复的情况.xlsx'))
+
 	total = db['1980'].count()
 	resMap = defaultdict(list)
 	xingMings = [element['姓名'] for element in db['1980'].find()]
@@ -78,18 +81,25 @@ def step2():
 	gzmcAndxm = [(element['官职名称'], element['姓名']) for element in db['1980'].find()]
 	counter = list(reversed(Counter(gzmcAndxm).most_common()))
 
-	for name, group in groupby(counter, lambda x: x[1]):
-		vaules = list(group)
-		if name in resMap:
-			resMap[name].extend([len(list(vaules)), len(list(vaules)) / total])
+	for times, group in groupby(counter, lambda x: x[1]):
+		values = list(group)
+		if times in resMap:
+			resMap[times].extend([len(list(values)), len(list(values)) / total])
 		else:
-			resMap[name].extend([name, None, None, len(list(vaules)), len(list(vaules)) / total])
+			resMap[times].extend([times, None, None, len(list(values)), len(list(values)) / total])
 
-	writer = pd.ExcelWriter(os.path.join(baseDir, '2.官职姓名重复的情况.xlsx'))
+		selectRes = list()
+		for x, y in [element[0] for element in values]:
+			selectRes.extend(list(db['1980'].find({'官职名称': x, '姓名': y})))
+		selectRes = [(x['官职名称'], x['姓名'], int(x['任职西历年']) if x['任职西历年'] else None) for x in selectRes]
+		df = pd.DataFrame(selectRes, columns=['官职名称', '姓名', '任职西历年'])
+		df.to_excel(writer, "{}次".format(times), index=False)
+		writer.save()
+
 	df = pd.DataFrame(resMap.values(), columns=['次数', '姓名', '姓名比例', "官职名称+姓名", "官职名称+姓名比例"])
 	df.to_excel(writer, "Sheet1", index=False)
 	writer.save()
-
+	logger.info("running step2 done!")
 
 def checkWrong(element):
 	renZhiShiJian = element['任职西历年']
