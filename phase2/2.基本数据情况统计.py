@@ -8,6 +8,12 @@ import pandas as pd
 from itertools import groupby, izip_longest
 from collections import Counter, defaultdict
 import os
+import pprint
+import sys
+
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -70,13 +76,17 @@ def step2():
 	logger.info("running step2!")
 	writer = pd.ExcelWriter(os.path.join(baseDir, '2.官职姓名重复的情况.xlsx'))
 
+	writer1 = pd.ExcelWriter(os.path.join(baseDir, '姓名.xlsx'))
 	total = db['1980'].count()
 	resMap = defaultdict(list)
 	xingMings = [element['姓名'] for element in db['1980'].find()]
 	counter = list(reversed(Counter(xingMings).most_common()))
-	for name, group in groupby(counter, lambda x: x[1]):
-		vaules = list(group)
-		resMap[name].extend([name, len(list(vaules)), len(list(vaules)) / total])
+	for times, group in groupby(counter, lambda x: x[1]):
+		values = list(group)
+		resMap[times].extend([times, len(values), len(values) / total])
+		df = pd.DataFrame([x[0] for x in values], columns=['姓名'])
+		df.to_excel(writer1, "{}次".format(times), index=False)
+		writer1.save()
 
 	gzmcAndxm = [(element['官职名称'], element['姓名']) for element in db['1980'].find()]
 	counter = list(reversed(Counter(gzmcAndxm).most_common()))
@@ -84,9 +94,9 @@ def step2():
 	for times, group in groupby(counter, lambda x: x[1]):
 		values = list(group)
 		if times in resMap:
-			resMap[times].extend([len(list(values)), len(list(values)) / total])
+			resMap[times].extend([len(values), len(values) / total])
 		else:
-			resMap[times].extend([times, None, None, len(list(values)), len(list(values)) / total])
+			resMap[times].extend([times, None, None, len(values), len(values) / total])
 
 		selectRes = list()
 		for x, y in [element[0] for element in values]:
@@ -96,7 +106,36 @@ def step2():
 		df.to_excel(writer, "{}次".format(times), index=False)
 		writer.save()
 
-	df = pd.DataFrame(resMap.values(), columns=['次数', '姓名', '姓名比例', "官职名称+姓名", "官职名称+姓名比例"])
+	third = list(set((element['姓名'], element['官职名称']) for element in db['1980'].find()))
+	third = sorted(third, key = lambda x: x[0])
+	tmpRes = []
+	for name, group in groupby(third, lambda x: x[0]):
+		values = list(group)
+		tmpRes.append((name, len(values), values))
+	tmpRes = sorted(tmpRes, key=lambda x: x[1])	
+	for times, group in groupby(tmpRes, lambda x: x[1]):
+		values = list(group)
+		logger.info("{} times, number = {}.".format(times, len(values)))
+		if times in resMap:
+			if len(resMap[times]) < 4:
+				resMap[times].extend([None, None])
+			resMap[times].extend([len(values), len(values) / total])
+		else:
+			resMap[times].extend([times, None, None, None, None, len(values), len(values) / total])
+
+		result = []	
+		for (_, _, interValues) in values:
+			for name, gunanZhiName in interValues:
+				selectRes = db['1980'].find({'官职名称': gunanZhiName, '姓名': name})
+				selectRes = [(name, gunanZhiName, int(ele['任职西历年']) if ele['任职西历年'] else None) for ele in selectRes]
+				result.extend(selectRes)
+		result = sorted(result, key = lambda x: x[2])
+		df = pd.DataFrame(result, columns=['姓名', '官职名称', '任职西历年'])
+		df.to_excel(writer, "姓同{}次".format(times), index=False)
+		writer.save()
+
+
+	df = pd.DataFrame(resMap.values(), columns=['次数', '姓名', '姓名比例', "官职名称+姓名", "官职名称+姓名比例", "姓名相同官职不同", "比例"])
 	df.to_excel(writer, "Sheet1", index=False)
 	writer.save()
 	logger.info("running step2 done!")
@@ -111,12 +150,12 @@ def checkWrong(element):
 			return True  # "履历不正确"
 		else:
 			return False
-	#没有出生时间，则判断"任职时间"是否在履历时间范围内
+	#没有出生时间，比较条件可以改为“任职朝代”在“时间1朝代”和“时间2朝代”之间就可以了 
 	if not shengNian and renZhiShiJian:
-		F = element['时间1公历年']
-		I = element['时间2公历年']
-		(Min, Max) = sorted((F, I))
-		if (int(renZhiShiJian) >= Min) and (int(renZhiShiJian) <= Max):
+		renZhiChaoDai =  element['任职朝代']
+		chaoDai1 = element['时间1朝代']
+		chaoDai2 = element['时间2朝代']
+		if renZhiChaoDai in [chaoDai1, chaoDai2]:
 			return False
 		else:
 			return True
@@ -128,14 +167,23 @@ def checkWrong(element):
 			if renZhiShiJian and (int(renZhiShiJian) - int(shengNian) <= 90) and (int(renZhiShiJian) - int(shengNian) >= 0):
 				return False
 		return True
-	return True
+	return False
+
+def checkWrong1(element):
+	gunanZhiName = element['官职名称']
+	renZhiZhiWei = element['任职职位']
+	xingMing     = element['姓名']
+	renZhiZhiWeis = [x['任职职位'] for x in db['data'].find({'姓名': xingMing, "姓名内编号": {"$nin" : ["", "0"]}})]
+	if len(renZhiZhiWeis) == 0:
+		return False
+	return all([x.find(gunanZhiName) <0  for x in renZhiZhiWeis])
 
 def doLvLiWrong(guanZhiLieBie):
 	res = db['1980'].find({"官职类别": guanZhiLieBie, "姓名内编号": "1"})
-	return len([x for x in res if checkWrong(x)])
+	return len([x for x in res if not checkWrong1(x)])
 
 def step3():
-	total = db['1980'].count()
+	total  = db['1980'].count()
 	writer = pd.ExcelWriter(os.path.join(baseDir, '3.履历情况统计.xlsx'))
 
 	gunanLeiBie  = list(db['1980'].distinct("官职类别"))
@@ -143,15 +191,17 @@ def step3():
 	for element in gunanLeiBie:
 		youLvLi   = db['1980'].find({"官职类别": element, "姓名内编号": "1"}).count()
 		wuLvLi    = db['1980'].find({"官职类别": element, "姓名内编号": "0"}).count()
-		wrongLvLi = doLvLiWrong(element)
-		res.append([element, youLvLi, youLvLi/total, wuLvLi, wuLvLi/total, wrongLvLi, wrongLvLi/youLvLi])
+		rightLvLi = doLvLiWrong(element)
+		#lvLiDaiDing = db['1980'].find({"官职类别": element, "姓名内编号": "1", "任职西历年": "", "生年": ""}).count()
+		lvLiDaiDing = len([x for x in db['1980'].find({"官职类别": element, "姓名内编号": "1"}) if checkWrong1(x)])
+		res.append([element, youLvLi, youLvLi/total, wuLvLi, wuLvLi/total, rightLvLi, rightLvLi/youLvLi, lvLiDaiDing, lvLiDaiDing/youLvLi])
 	
-	df = pd.DataFrame(res, columns=['官职类别', '有履历数量', "有履历比例", "无履历数量", "无履历比例", "履历不正确", "履历不正确比例"])
+	df = pd.DataFrame(res, columns=['官职类别', '有履历数量', "有履历比例", "无履历数量", "无履历比例", "履历正确", "履历正确比例", "履历待定", "履历待定比例"])
 	df.to_excel(writer, "Sheet1", index=False)
 	writer.save()
 
 if __name__ == '__main__':
-	precondition()
-	step1()
-	step2()
+	#precondition()
+	#step1()
+	#step2()
 	step3()
