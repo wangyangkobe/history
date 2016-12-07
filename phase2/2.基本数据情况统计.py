@@ -84,7 +84,11 @@ def step2():
 	for times, group in groupby(counter, lambda x: x[1]):
 		values = list(group)
 		resMap[times].extend([times, len(values), len(values) / total])
-		df = pd.DataFrame([x[0] for x in values], columns=['姓名'])
+		res = []
+		for x in values:
+			for y in db['1980'].find({'姓名': x[0]}):
+				res.append((x[0], y['官职名称'], y['任职西历年']))
+		df = pd.DataFrame(res, columns=['姓名','官职名称','任职西历年'])
 		df.to_excel(writer1, "{}次".format(times), index=False)
 		writer1.save()
 
@@ -180,9 +184,13 @@ def checkWrong1(element):
 
 def doLvLiWrong(guanZhiLieBie):
 	res = db['1980'].find({"官职类别": guanZhiLieBie, "姓名内编号": "1"})
-	return len([x for x in res if not checkWrong1(x)])
+	right = [x for x in res if not checkWrong1(x)]
+	if right:
+		db['right'].insert(right)
+	return len(right)
 
 def step3():
+	db['right'].drop()
 	total  = db['1980'].count()
 	writer = pd.ExcelWriter(os.path.join(baseDir, '3.履历情况统计.xlsx'))
 
