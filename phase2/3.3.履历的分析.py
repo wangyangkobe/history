@@ -222,10 +222,37 @@ def step6():
 
 	logger.info("finish step6!")
 
+def step7():
+	logger.info("running step7!")
+	writer = pd.ExcelWriter(os.path.join(baseDir, '7.履历正确的官员仕途生涯长短.xlsx'))
+	fields = "官职类别;官职名称;职位总序号;姓名;任职西历年;科举功名;世袭世职"
+
+	for lvLiLeiBie in ["1", "2", "3"]:
+		table = []
+		for element in db['right'].find({}):
+			result = list(db['data'].find({'姓名': element['姓名'], '职位总序号': element['职位总序号'], '履历类别': lvLiLeiBie}))
+			result = sorted(result, key = lambda x: int(x['姓名内编号']))
+			
+			years = []
+			for x in result:
+				if x['时间1公历年'] != '':
+					years.append(int(x['时间1公历年']))
+				if x['时间2公历年'] != '':
+					years.append(int(x['时间2公历年']))
+			
+			yearDiff = max(years) - min(years) if years else 0
+
+			table.append(getValues(element, fields) + [yearDiff])
+		df = pd.DataFrame(table, columns=fields.split(";") + ["仕途生涯长短"])
+		df.to_excel(writer,"履历类别{}".format(lvLiLeiBie),index=False)
+	writer.save()
+	logger.info("finish step7!")
+
 if __name__ == '__main__':
 	#step1()
 	#step2()
 	#step3()
 	#step4()
 	#step5()
-	step6()
+	#step6()
+	step7()
